@@ -24,15 +24,21 @@ app.use(express.urlencoded({ extended: true }));
 // Database connection
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/kasprzysana', {
+    // Clean up the MongoDB URI to remove any spaces
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/kasprzysana';
+    const cleanUri = mongoUri.trim().replace(/\s+/g, '');
+    
+    console.log('Attempting to connect to MongoDB...');
+    const conn = await mongoose.connect(cleanUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error('MongoDB connection error:', error);
+    console.error('MongoDB URI (sanitized):', process.env.MONGODB_URI ? '***' : 'mongodb://localhost:27017/kasprzysana');
     process.exit(1);
   }
 };
@@ -44,7 +50,9 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    hasMongoUri: !!process.env.MONGODB_URI,
+    nodeEnv: process.env.NODE_ENV
   });
 });
 
