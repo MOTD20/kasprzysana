@@ -109,8 +109,8 @@ const Register: React.FC = () => {
                 } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
                 placeholder="Enter your email"
               />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              {typeof errors.email?.message === 'string' && (
+                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
               )}
             </div>
 
