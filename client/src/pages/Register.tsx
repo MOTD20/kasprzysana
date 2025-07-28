@@ -27,13 +27,25 @@ const Register: React.FC = () => {
 
   const password = watch('password');
 
+  const getErrorMessage = (error: unknown) => {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'message' in error &&
+      typeof (error as any).message === 'string'
+    ) {
+      return (error as any).message;
+    }
+    return null;
+  };
+
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
     try {
       await registerUser(data.name, data.email, data.password);
       navigate('/dashboard');
     } catch (error) {
-      // Error is handled by the auth context
+      // Error handled by auth context
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +71,7 @@ const Register: React.FC = () => {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>
@@ -83,8 +95,8 @@ const Register: React.FC = () => {
                 } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
                 placeholder="Enter your full name"
               />
-              {errors.name?.message && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              {getErrorMessage(errors.name) && (
+                <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.name)}</p>
               )}
             </div>
 
@@ -109,8 +121,8 @@ const Register: React.FC = () => {
                 } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
                 placeholder="Enter your email"
               />
-              {errors.email?.message && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              {getErrorMessage(errors.email) && (
+                <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.email)}</p>
               )}
             </div>
 
@@ -148,8 +160,8 @@ const Register: React.FC = () => {
                   )}
                 </button>
               </div>
-              {errors.password?.message && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              {getErrorMessage(errors.password) && (
+                <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.password)}</p>
               )}
             </div>
 
@@ -185,8 +197,8 @@ const Register: React.FC = () => {
                   )}
                 </button>
               </div>
-              {errors.confirmPassword?.message && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+              {getErrorMessage(errors.confirmPassword) && (
+                <p className="mt-1 text-sm text-red-600">{getErrorMessage(errors.confirmPassword)}</p>
               )}
             </div>
           </div>
