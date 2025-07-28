@@ -83,7 +83,7 @@ const Register: React.FC = () => {
                 } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
                 placeholder="Enter your full name"
               />
-              {errors.name && (
+              {errors.name?.message && (
                 <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
               )}
             </div>
@@ -109,8 +109,8 @@ const Register: React.FC = () => {
                 } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
                 placeholder="Enter your email"
               />
-              {typeof errors.email?.message === 'string' && (
-                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              {errors.email?.message && (
+                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
               )}
             </div>
 
@@ -148,7 +148,7 @@ const Register: React.FC = () => {
                   )}
                 </button>
               </div>
-              {errors.password && (
+              {errors.password?.message && (
                 <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
@@ -185,7 +185,7 @@ const Register: React.FC = () => {
                   )}
                 </button>
               </div>
-              {errors.confirmPassword && (
+              {errors.confirmPassword?.message && (
                 <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
               )}
             </div>
@@ -213,4 +213,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register; 
+export default Register;
