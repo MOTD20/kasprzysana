@@ -41,13 +41,36 @@ const connectDB = async () => {
     const cleanUri = mongoUri.trim().replace(/\s+/g, '');
     
     console.log('Attempting to connect to MongoDB...');
-    const conn = await mongoose.connect(cleanUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log('MongoDB URI length:', cleanUri.length);
+    
+    // Parse and validate the URI
+    const uriParts = cleanUri.split('/');
+    const dbName = uriParts[uriParts.length - 1];
+    console.log('Database name:', dbName);
+    console.log('Database name length:', dbName.length);
+    
+    if (dbName.length > 38) {
+      console.error('Database name is too long. Using default name.');
+      const baseUri = cleanUri.substring(0, cleanUri.lastIndexOf('/'));
+      const finalUri = `${baseUri}/kasprzysana`;
+      console.log('Using corrected URI:', finalUri);
+      
+      const conn = await mongoose.connect(finalUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+      });
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+    } else {
+      const conn = await mongoose.connect(cleanUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+      });
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+    }
   } catch (error) {
     console.error('MongoDB connection error:', error);
     console.error('MongoDB URI (sanitized):', process.env.MONGODB_URI ? '***' : 'mongodb://localhost:27017/kasprzysana');
@@ -76,10 +99,20 @@ app.use('/api/users', userRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static('client/build'));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
-  });
+  const staticPath = path.join(__dirname, '..', 'client', 'build');
+  console.log('Static files path:', staticPath);
+  
+  if (require('fs').existsSync(staticPath)) {
+    app.use(express.static(staticPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(staticPath, 'index.html'));
+    });
+  } else {
+    console.log('Static files not found, serving API only');
+    app.get('*', (req, res) => {
+      res.json({ message: 'API is running, but frontend files are not built yet' });
+    });
+  }
 }
 
 // Error handling middleware
