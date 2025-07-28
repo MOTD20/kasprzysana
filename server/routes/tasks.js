@@ -7,6 +7,145 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Toggle task completion
+router.patch('/:id/toggle', auth, async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Check if user has access to this task
+    const project = await Project.findById(task.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const hasAccess = project.owner.equals(req.user._id) || 
+                     project.members.some(member => member.user.equals(req.user._id)) ||
+                     project.isPublic;
+
+    if (!hasAccess) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    await task.toggleCompletion(req.user._id);
+    
+    res.json({
+      message: 'Task completion toggled successfully',
+      task: {
+        _id: task._id,
+        isCompleted: task.isCompleted,
+        completedAt: task.completedAt,
+        completedBy: task.completedBy
+      }
+    });
+  } catch (error) {
+    console.error('Toggle task completion error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get task completion progress
+router.get('/:id/progress', auth, async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    const progress = await task.getCompletionProgress();
+    
+    res.json({
+      taskId: task._id,
+      progress,
+      isCompleted: task.isCompleted,
+      totalSubtasks: task.subtasks.length
+    });
+  } catch (error) {
+    console.error('Get task progress error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Add subtask to task
+router.post('/:id/subtasks', auth, [
+  body('title').trim().isLength({ min: 1 }).withMessage('Title is required'),
+  body('description').optional().trim(),
+  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Invalid priority')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const parentTask = await Task.findById(req.params.id);
+    if (!parentTask) {
+      return res.status(404).json({ message: 'Parent task not found' });
+    }
+
+    // Check access to parent task
+    const project = await Project.findById(parentTask.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const hasAccess = project.owner.equals(req.user._id) || 
+                     project.members.some(member => member.user.equals(req.user._id)) ||
+                     project.isPublic;
+
+    if (!hasAccess) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const { title, description, priority = 'medium' } = req.body;
+
+    const subtask = new Task({
+      title,
+      description,
+      project: parentTask.project,
+      creator: req.user._id,
+      priority,
+      parentTask: parentTask._id
+    });
+
+    await subtask.save();
+
+    // Add subtask to parent task
+    parentTask.subtasks.push(subtask._id);
+    await parentTask.save();
+
+    res.status(201).json({
+      message: 'Subtask created successfully',
+      subtask: await subtask.populate('creator', 'name email avatar')
+    });
+  } catch (error) {
+    console.error('Create subtask error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get subtasks of a task
+router.get('/:id/subtasks', auth, async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    const subtasks = await Task.find({ _id: { $in: task.subtasks } })
+      .populate('creator', 'name email avatar')
+      .populate('assignees.user', 'name email avatar')
+      .sort({ createdAt: 1 });
+
+    res.json({ subtasks });
+  } catch (error) {
+    console.error('Get subtasks error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get tasks with filtering
 router.get('/', auth, async (req, res) => {
   try {
