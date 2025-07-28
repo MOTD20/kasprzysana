@@ -6,6 +6,18 @@ const compression = require('compression');
 const path = require('path');
 require('dotenv').config();
 
+// Check if all required dependencies are available
+try {
+  const bcrypt = require('bcryptjs');
+  const jwt = require('jsonwebtoken');
+  console.log('✅ All dependencies loaded successfully');
+  console.log('bcryptjs version:', bcrypt.version);
+  console.log('jsonwebtoken version:', jwt.version);
+} catch (error) {
+  console.error('❌ Dependency error:', error.message);
+  process.exit(1);
+}
+
 const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const taskRoutes = require('./routes/tasks');
