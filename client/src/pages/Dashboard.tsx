@@ -66,7 +66,7 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'tasks'>('overview');
 
   const { data: projects, isLoading: projectsLoading } = useQuery<Project[]>(
-    'projects',
+    ['projects'],
     async () => {
       const response = await axios.get('/api/projects');
       return response.data.projects;
@@ -74,7 +74,7 @@ const Dashboard: React.FC = () => {
   );
 
   const { data: tasks, isLoading: tasksLoading } = useQuery<Task[]>(
-    'tasks',
+    ['tasks'],
     async () => {
       const response = await axios.get('/api/tasks?limit=10');
       return response.data.tasks;
